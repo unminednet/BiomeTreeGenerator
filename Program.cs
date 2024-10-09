@@ -28,6 +28,22 @@ internal class Program
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });
 
+        var unknownBiomes = TreeTools.GetUnknownBiomes(tree, biomeIds).Distinct().OrderBy(x => x).ToList();
+        if (unknownBiomes.Count > 0)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Missing biome ID mappings:");
+            Console.WriteLine("--------------------------");
+            Console.WriteLine();
+            foreach (var b in unknownBiomes)
+                Console.WriteLine(b);
+            Console.WriteLine();
+            Console.WriteLine("Add these biomes to biomeids.json to make this work.");
+
+            Environment.Exit(-1);
+        }
+
+
         Console.WriteLine("Converting biome tree to binary format");
 
         // set root node parameters to zero
