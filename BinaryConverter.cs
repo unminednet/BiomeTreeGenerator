@@ -12,7 +12,7 @@ public class BinaryConverter(Dictionary<string, byte> biomeIds)
         if (rootNode.SubTree == null || rootNode.SubTree.Length == 0)
             throw new ArgumentException("The root node has no child nodes.");
 
-        var order = rootNode.SubTree.Length;
+        var order = GetNodeOrder(rootNode);
         var depth = GetNodeDepth(rootNode);
         var steps = new int[depth];
 
@@ -38,6 +38,14 @@ public class BinaryConverter(Dictionary<string, byte> biomeIds)
             Nodes = nodes.ToArray(),
             Ranges = ranges.ToArray()
         };
+    }
+
+    private int GetNodeOrder(TreeNode node)
+    {
+        if (node.SubTree is { Length: > 0 })
+            return node.SubTree.Select(GetNodeOrder).Append(node.SubTree.Length).Max();
+
+        return 0;
     }
 
     private static int GetNodeDepth(TreeNode node)
