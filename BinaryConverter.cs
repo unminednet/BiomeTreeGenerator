@@ -1,4 +1,4 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
 
 namespace BiomeTreeGenerator;
 
@@ -25,7 +25,7 @@ public class BinaryConverter(Dictionary<string, byte> biomeIds)
             f *= 6;
         }
 
-        var ranges = new List<Range>();
+        var ranges = GetRanges(rootNode);
         var nodes = new List<ulong>();
 
         DumpNode(rootNode, ranges, nodes);
@@ -38,6 +38,26 @@ public class BinaryConverter(Dictionary<string, byte> biomeIds)
             Nodes = nodes.ToArray(),
             Ranges = ranges.ToArray()
         };
+    }
+
+
+    private List<Range> GetRanges(TreeNode rootNode)
+    {
+        var set = new HashSet<Range>();
+        GetRanges(rootNode, set);
+        return set.Order().ToList();
+    }
+
+    private void GetRanges(TreeNode node, HashSet<Range> set)
+    {
+        // Minecraft has 7 parameters, we use 6 (skip "offset")
+        foreach (var p in node.Parameters.Take(6).Reverse()) set.Add(p);
+
+        if (node.SubTree == null)
+            return;
+
+        foreach (var n in node.SubTree)
+            GetRanges(n, set);
     }
 
     private int GetNodeOrder(TreeNode node)
@@ -60,16 +80,10 @@ public class BinaryConverter(Dictionary<string, byte> biomeIds)
     {
         var value = 0ul;
 
-        // Minecraft has 7 parameters, we use 6 (skip "offset")
         foreach (var p in node.Parameters.Take(6).Reverse())
         {
             var i = ranges.IndexOf(p);
-            if (i < 0)
-            {
-                ranges.Add(p);
-                i = ranges.Count - 1;
-            }
-
+            Debug.Assert(i >= 0);
             value = (value << 8) + (ulong)i;
         }
 
@@ -89,18 +103,5 @@ public class BinaryConverter(Dictionary<string, byte> biomeIds)
             value = ((0xff00 + (ulong)biomeId) << 48) + value;
             nodes.Add(value);
         }
-    }
-
-
-    private static bool HasOrder(TreeNode node, int order)
-    {
-        if (node.SubTree == null) return true;
-
-        if (node.SubTree.Length != order)
-            return false;
-
-        if (node.SubTree.Any(n => !HasOrder(n, order))) return false;
-
-        return true;
     }
 }
